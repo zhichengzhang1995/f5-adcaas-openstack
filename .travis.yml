@@ -31,7 +31,9 @@ jobs:
         - ./vpn_connect.sh
         - popd
       script:
-        - echo "No test"
+        - pushed test/Auto
+        - ./ptest.sh
+        - ./build.sh
     - stage: publish-docs
       language: python
       sudo: required
