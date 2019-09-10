@@ -1,0 +1,343 @@
+{
+	"info": {
+		"_postman_id": "ae1152ba-cea5-4aba-a34c-4ca6a714c35b",
+		"name": "f5-adcaas-openstack-test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "onboarding",
+			"item": [
+				{
+					"name": "ping",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "325afabd-2d63-4a33-aa5f-6b7616a707d7",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "08864c35-0f28-465f-8ae7-63528f6693f4",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{PING_URL}}",
+							"host": [
+								"{{PING_URL}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create-adc",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3a3e6156-5277-4515-8da7-51fa0ab6461d",
+								"exec": [
+									"pm.test('response code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"pm.environment.set('ADC_ID', resp.adc.id);",
+									"",
+									"pm.test('ADC state is NEW', function () {",
+									"    pm.expect(resp.adc.status).to.eql('NEW');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Tenant-Id",
+								"value": "{{OS_PROJECT_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"newman-test-adc\",\n  \"type\": \"VE\",\n  \"networks\": {\n    \"mgmt1\": {\n      \"type\": \"mgmt\",\n      \"networkId\": \"{{MGMT_NET_ID}}\"\n    },\n    \"failover1\": {\n      \"type\": \"ha\",\n      \"networkId\": \"{{HA_NET_ID}}\"\n    },\n    \"internal1\": {\n      \"type\": \"int\",\n      \"networkId\": \"{{INT_NET_ID}}\"\n    },\n    \"external2\": {\n      \"type\": \"ext\",\n      \"networkId\": \"{{EXT_NET_ID}}\"\n    }\n  },\n  \"compute\": {\n    \"imageRef\": \"{{ADC_IMAGE_ID}}\",\n    \"flavorRef\": \"{{ADC_FLAVOR_ID}}\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{ADCAAS_URL}}/adcs",
+							"host": [
+								"{{ADCAAS_URL}}"
+							],
+							"path": [
+								"adcs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "wait-adc-onboard",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "423a76f3-fd2d-42a0-ad50-0802a33e0834",
+								"exec": [
+									"pm.test('response code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"console.log(resp.adc.status);",
+									"",
+									"let retry = Number(pm.environment.get('ONBOARD_RETRY'));",
+									"if (retry === 0) {",
+									"    pm.test('ADC onboarding timeout', function () {",
+									"        pm.expect(false).to.be.true;",
+									"    });",
+									"}",
+									"pm.environment.set('ONBOARD_RETRY', --retry);",
+									"",
+									"pm.test('ADC state is not ERROR', function () {",
+									"    pm.expect(resp.adc.status).to.not.have.string('ERROR');",
+									"});",
+									"",
+									"if (resp.adc.status !== 'ONBOARDED') {",
+									"    postman.setNextRequest('wait-adc-onboard');",
+									"    setTimeout(function(){}, 10000)",
+									"}",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{TOKEN}}",
+								"type": "text"
+							},
+							{
+								"key": "Tenant-Id",
+								"value": "{{OS_PROJECT_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{ADCAAS_URL}}/adcs/{{ADC_ID}}",
+							"host": [
+								"{{ADCAAS_URL}}"
+							],
+							"path": [
+								"adcs",
+								"{{ADC_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "\bsetup-adc",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "364386eb-ae90-496b-a58c-50f5325a0361",
+								"exec": [
+									"pm.test('response code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							},
+							{
+								"key": "Tenant-Id",
+								"value": "{{OS_PROJECT_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{ADCAAS_URL}}/adcs/{{ADC_ID}}/setup",
+							"host": [
+								"{{ADCAAS_URL}}"
+							],
+							"path": [
+								"adcs",
+								"{{ADC_ID}}",
+								"setup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "wait-adc-active",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "423a76f3-fd2d-42a0-ad50-0802a33e0834",
+								"exec": [
+									"pm.test('response code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"console.log(resp.adc.status);",
+									"",
+									"let retry = Number(pm.environment.get('ACTIVE_RETRY'));",
+									"if (retry === 0) {",
+									"    pm.test('ADC setup timeout', function () {",
+									"        pm.expect(false).to.be.true;",
+									"    });",
+									"}",
+									"pm.environment.set('ACTIVE_RETRY', --retry);",
+									"",
+									"pm.test('ADC state is not ERROR', function () {",
+									"    pm.expect(resp.adc.status).to.not.have.string('ERROR');",
+									"});",
+									"",
+									"if (resp.adc.status !== 'ACTIVE') {",
+									"    postman.setNextRequest('wait-adc-active');",
+									"    setTimeout(function(){}, 10000)",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Tenant-Id",
+								"value": "{{OS_PROJECT_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{ADCAAS_URL}}/adcs/{{ADC_ID}}",
+							"host": [
+								"{{ADCAAS_URL}}"
+							],
+							"path": [
+								"adcs",
+								"{{ADC_ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "d1210cb3-04f6-4cf4-b946-b05050f1635a",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "0d5c2188-5665-4570-b629-91c1d70907d1",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "a083f7b9-cc93-4ede-a63a-6202c70928c3",
+			"key": "OS_AUTH_URL",
+			"value": "http://10.250.13.51:5000/v3",
+			"type": "string"
+		},
+		{
+			"id": "8dce988b-af51-46f5-b043-8067b965b9f2",
+			"key": "ADCAAS_URL",
+			"value": "http://localhost:3000/adcaas/v1",
+			"type": "string"
+		}
+	]
+}

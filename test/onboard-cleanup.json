@@ -1,0 +1,200 @@
+{
+	"info": {
+		"_postman_id": "ae1152ba-cea5-4aba-a34c-4ca6a714c35b",
+		"name": "f5-adcaas-openstack-test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "cleanup",
+			"item": [
+				{
+					"name": "delete-adc",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ae89ec78-52fc-4ab8-967d-328af3c471fb",
+								"exec": [
+									"pm.test('response code is 204', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"value": "{{TOKEN}}",
+								"type": "text"
+							},
+							{
+								"key": "Tenant-Id",
+								"value": "{{OS_PROJECT_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{ADCAAS_URL}}/adcs/{{ADC_ID}}",
+							"host": [
+								"{{ADCAAS_URL}}"
+							],
+							"path": [
+								"adcs",
+								"{{ADC_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "wait-adc-deleted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "423a76f3-fd2d-42a0-ad50-0802a33e0834",
+								"exec": [
+									"pm.test('response is 200 or 404', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+									"});",
+									"",
+									"let retry = Number(pm.environment.get('DELETE_RETRY'));",
+									"if (retry === 0) {",
+									"    pm.test('ADC delete timeout', function () {",
+									"        pm.expect(false).to.be.true;",
+									"    });",
+									"}",
+									"pm.environment.set('DELETE_RETRY', --retry);",
+									"",
+									"if (pm.response.code !== 404) {",
+									"    postman.setNextRequest('wait-adc-deleted');",
+									"    setTimeout(function(){}, 10000)",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Tenant-Id",
+								"type": "text",
+								"value": "{{OS_PROJECT_ID}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{ADCAAS_URL}}/adcs/{{ADC_ID}}",
+							"host": [
+								"{{ADCAAS_URL}}"
+							],
+							"path": [
+								"adcs",
+								"{{ADC_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "delete-web-server",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "ae89ec78-52fc-4ab8-967d-328af3c471fb",
+								"exec": [
+									"pm.test('response code is 204', function () {",
+									"    pm.response.to.have.status(204);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NOVA_URL}}/servers/{{WEB_SERVER_ID}}",
+							"host": [
+								"{{NOVA_URL}}"
+							],
+							"path": [
+								"servers",
+								"{{WEB_SERVER_ID}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "d1210cb3-04f6-4cf4-b946-b05050f1635a",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "0d5c2188-5665-4570-b629-91c1d70907d1",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "a083f7b9-cc93-4ede-a63a-6202c70928c3",
+			"key": "OS_AUTH_URL",
+			"value": "http://10.250.13.51:5000/v3",
+			"type": "string"
+		},
+		{
+			"id": "8dce988b-af51-46f5-b043-8067b965b9f2",
+			"key": "ADCAAS_URL",
+			"value": "http://localhost:3000/adcaas/v1",
+			"type": "string"
+		}
+	]
+}

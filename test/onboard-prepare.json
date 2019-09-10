@@ -1,0 +1,1023 @@
+{
+	"info": {
+		"_postman_id": "ae1152ba-cea5-4aba-a34c-4ca6a714c35b",
+		"name": "f5-adcaas-openstack-test",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "prepare",
+			"item": [
+				{
+					"name": "get-keystone-token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "3505f69b-71fe-4ad8-b0e4-79ee410339f8",
+								"exec": [
+									"let token = pm.response.headers.get('X-Subject-Token');",
+									"pm.environment.set('TOKEN', token);",
+									"",
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"for (let service of resp.token.catalog) {",
+									"    for (let endpoint of service.endpoints) {",
+									"        if (endpoint.interface === 'public') {",
+									"            switch (service.name) {",
+									"                case 'nova':",
+									"                    pm.environment.set('NOVA_URL', endpoint.url);",
+									"                    break;",
+									"                case 'neutron':",
+									"                    pm.environment.set('NEUTRON_URL', endpoint.url);",
+									"                    break;",
+									"                case 'glance':",
+									"                    pm.environment.set('GLANCE_URL', endpoint.url);",
+									"                    break;",
+									"            }",
+									"        }",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "ed46c373-cd9d-4c8f-a06e-c0fc511a0820",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "Tenant-Id",
+								"value": "{{OS_PROJECT_ID}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"auth\": {\n        \"identity\": {\n            \"methods\": [\n                \"password\"\n            ],\n            \"password\": {\n                \"user\": {\n                    \"name\": \"{{OS_USERNAME}}\",\n                    \"domain\": {\n                \t\t\"name\": \"Default\"\n            \t\t},\n                    \"password\": \"{{OS_PASSWORD}}\"\n                }\n            }\n        },\n        \"scope\": {\n            \"project\": {\n                \"id\": \"{{OS_PROJECT_ID}}\"\n            }\n        }\n    }\n}"
+						},
+						"url": {
+							"raw": "{{OS_AUTH_URL}}/auth/tokens",
+							"host": [
+								"{{OS_AUTH_URL}}"
+							],
+							"path": [
+								"auth",
+								"tokens"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-adc-image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.test('adc image is found', function () {",
+									"    pm.expect(resp.images.length).to.equal(1);",
+									"});",
+									"",
+									"pm.environment.set('ADC_IMAGE_ID', resp.images[0].id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{GLANCE_URL}}/v2/images?name={{ADC_IMAGE}}",
+							"host": [
+								"{{GLANCE_URL}}"
+							],
+							"path": [
+								"v2",
+								"images"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "{{ADC_IMAGE}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-web-server-image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.test('web server image is found', function () {",
+									"    pm.expect(resp.images.length).to.equal(1);",
+									"});",
+									"",
+									"pm.environment.set('WEB_SERVER_IMAGE_ID', resp.images[0].id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{GLANCE_URL}}/v2/images?name={{WEB_SERVER_IMAGE}}",
+							"host": [
+								"{{GLANCE_URL}}"
+							],
+							"path": [
+								"v2",
+								"images"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "{{WEB_SERVER_IMAGE}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-management-network",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.test('management network is found', function () {",
+									"    pm.expect(resp.networks.length).to.equal(1);",
+									"});",
+									"",
+									"pm.environment.set('MGMT_NET_ID', resp.networks[0].id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NEUTRON_URL}}/v2.0/networks?name={{MGMT_NET}}",
+							"host": [
+								"{{NEUTRON_URL}}"
+							],
+							"path": [
+								"v2.0",
+								"networks"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "{{MGMT_NET}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-ha-network",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.test('ha network is found', function () {",
+									"    pm.expect(resp.networks.length).to.equal(1);",
+									"});",
+									"",
+									"pm.environment.set('HA_NET_ID', resp.networks[0].id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NEUTRON_URL}}/v2.0/networks?name={{HA_NET}}",
+							"host": [
+								"{{NEUTRON_URL}}"
+							],
+							"path": [
+								"v2.0",
+								"networks"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "{{HA_NET}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-internal-network",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.test('internal network is found', function () {",
+									"    pm.expect(resp.networks.length).to.equal(1);",
+									"});",
+									"",
+									"pm.environment.set('INT_NET_ID', resp.networks[0].id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NEUTRON_URL}}/v2.0/networks?name={{INT_NET}}",
+							"host": [
+								"{{NEUTRON_URL}}"
+							],
+							"path": [
+								"v2.0",
+								"networks"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "{{INT_NET}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-external-network",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.test('external network is found', function () {",
+									"    pm.expect(resp.networks.length).to.equal(1);",
+									"});",
+									"",
+									"pm.environment.set('EXT_NET_ID', resp.networks[0].id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NEUTRON_URL}}/v2.0/networks?name={{EXT_NET}}",
+							"host": [
+								"{{NEUTRON_URL}}"
+							],
+							"path": [
+								"v2.0",
+								"networks"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "{{EXT_NET}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-adc-flavor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"let flavor_name = pm.environment.get('ADC_FLAVOR');",
+									"let flavor_id = '';",
+									"",
+									"for (let flavor of resp.flavors) {",
+									"    if (flavor.name === flavor_name) {",
+									"        flavor_id = flavor.id;",
+									"    }",
+									"}",
+									"",
+									"if (flavor_id) {",
+									"    pm.environment.set('ADC_FLAVOR_ID', flavor_id);",
+									"    postman.setNextRequest('get-web-server-flavor');",
+									"} else {",
+									"    postman.setNextRequest('create-adc-flavor');",
+									"}",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NOVA_URL}}/{{OS_PROJECT_ID}}/flavors",
+							"host": [
+								"{{NOVA_URL}}"
+							],
+							"path": [
+								"{{OS_PROJECT_ID}}",
+								"flavors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create-adc-flavor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.environment.set('ADC_FLAVOR_ID', resp.flavor.id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"flavor\": {\n\t\t\"name\": \"{{ADC_FLAVOR}}\",\n\t\t\"ram\": 8192,\n        \"vcpus\": 4,\n        \"disk\": 180\n\t}\n}\n"
+						},
+						"url": {
+							"raw": "{{NOVA_URL}}/{{OS_PROJECT_ID}}/flavors",
+							"host": [
+								"{{NOVA_URL}}"
+							],
+							"path": [
+								"{{OS_PROJECT_ID}}",
+								"flavors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "get-web-server-flavor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"let flavor_name = pm.environment.get('WEB_SERVER_FLAVOR');",
+									"let flavor_id = '';",
+									"",
+									"for (let flavor of resp.flavors) {",
+									"    if (flavor.name === flavor_name) {",
+									"        flavor_id = flavor.id;",
+									"    }",
+									"}",
+									"",
+									"if (flavor_id) {",
+									"    pm.environment.set('WEB_SERVER_FLAVOR_ID', flavor_id);",
+									"    postman.setNextRequest('create-web-server');",
+									"} else {",
+									"    postman.setNextRequest('create-web-server-flavor');",
+									"}",
+									""
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NOVA_URL}}/{{OS_PROJECT_ID}}/flavors",
+							"host": [
+								"{{NOVA_URL}}"
+							],
+							"path": [
+								"{{OS_PROJECT_ID}}",
+								"flavors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create-web-server-flavor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.environment.set('WEB_SERVER_FLAVOR_ID', resp.flavor.id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"flavor\": {\n\t\t\"name\": \"{{WEB_SERVER_FLAVOR}}\",\n\t\t\"ram\": 2048,\n        \"vcpus\": 1,\n        \"disk\": 20\n\t}\n}\n"
+						},
+						"url": {
+							"raw": "{{NOVA_URL}}/{{OS_PROJECT_ID}}/flavors",
+							"host": [
+								"{{NOVA_URL}}"
+							],
+							"path": [
+								"{{OS_PROJECT_ID}}",
+								"flavors"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create-web-server",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(202);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.environment.set('WEB_SERVER_ID', resp.server.id);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									"let userdata = `#!/bin/bash",
+									"while true ; do",
+									"(echo -e 'HTTP/1.1 200 OK\\r\\n'; echo -e \"Web Server $(host $(hostname) | head -n1 | awk '{print $4}')\") | nc -q 0 -p 80 -l 0.0.0.0",
+									"done`;",
+									"",
+									"pm.environment.set('WEB_SERVER_USERDATA', btoa(userdata));",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"server\" : {\n        \"name\" : \"newman-test-web-server\",\n        \"imageRef\" : \"{{WEB_SERVER_IMAGE_ID}}\",\n        \"networks\" : [\n        \t{\n        \t\t\"uuid\": \"{{INT_NET_ID}}\"\n        \t}\n        ],\n        \"flavorRef\" : \"{{WEB_SERVER_FLAVOR_ID}}\",\n        \"user_data\": \"{{WEB_SERVER_USERDATA}}\",\n        \"config_drive\": true\n    }\n}\n"
+						},
+						"url": {
+							"raw": "{{NOVA_URL}}/servers",
+							"host": [
+								"{{NOVA_URL}}"
+							],
+							"path": [
+								"servers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "wait-web-server-poweron",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "423a76f3-fd2d-42a0-ad50-0802a33e0834",
+								"exec": [
+									"pm.test('response code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"console.log(resp.server.status);",
+									"",
+									"let retry = Number(pm.environment.get('POWERON_RETRY'));",
+									"if (retry === 0) {",
+									"    pm.test('Web server powering timeout', function () {",
+									"        pm.expect(false).to.be.true;",
+									"    });",
+									"}",
+									"pm.environment.set('POWERON_RETRY', --retry);",
+									"",
+									"pm.test('Web server state is not ERROR', function () {",
+									"    pm.expect(resp.server.status).to.not.have.string('ERROR');",
+									"});",
+									"",
+									"if (resp.server.status !== 'ACTIVE') {",
+									"    postman.setNextRequest('wait-web-server-poweron');",
+									"    setTimeout(function(){}, 10000)",
+									"} else {",
+									"    let internal_net = pm.environment.get('INT_NET');",
+									"",
+									"    pm.test('web server has internal network address', function() {",
+									"        pm.expect(resp.server.addresses[internal_net]).to.be.an('array');",
+									"        pm.expect(resp.server.addresses[internal_net].length).to.be.above(0);",
+									"    });",
+									"",
+									"    pm.environment.set('MEMBER_IP', resp.server.addresses[internal_net][0].addr);",
+									"}",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{NOVA_URL}}/servers/{{WEB_SERVER_ID}}",
+							"host": [
+								"{{NOVA_URL}}"
+							],
+							"path": [
+								"servers",
+								"{{WEB_SERVER_ID}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "create-vip-port",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
+								"exec": [
+									"pm.test('response is ok', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"let resp = pm.response.json();",
+									"",
+									"pm.environment.set('VIP_PORT_ID', resp.port.id);",
+									"",
+									"pm.environment.set('VIP', resp.port.fixed_ips[0].ip_address);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "X-Auth-Token",
+								"type": "text",
+								"value": "{{TOKEN}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"port\": {\n        \"name\": \"newman-test-port\",\n        \"network_id\": \"{{EXT_NET_ID}}\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{NEUTRON_URL}}/v2.0/ports",
+							"host": [
+								"{{NEUTRON_URL}}"
+							],
+							"path": [
+								"v2.0",
+								"ports"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"id": "d1210cb3-04f6-4cf4-b946-b05050f1635a",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"id": "0d5c2188-5665-4570-b629-91c1d70907d1",
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"id": "a083f7b9-cc93-4ede-a63a-6202c70928c3",
+			"key": "OS_AUTH_URL",
+			"value": "http://10.250.13.51:5000/v3",
+			"type": "string"
+		},
+		{
+			"id": "8dce988b-af51-46f5-b043-8067b965b9f2",
+			"key": "ADCAAS_URL",
+			"value": "http://localhost:3000/adcaas/v1",
+			"type": "string"
+		}
+	]
+}
