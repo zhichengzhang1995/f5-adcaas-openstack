@@ -7,4 +7,4 @@ if [ $? -ne 0 ] ; then
   exit 1
 fi
 
-newman run onboard-declaration.json -e test_os-queens-environment.json -r cli,html --bail
+newman run onboard-test.json -e os-queens-environment.json -r cli,html --bail

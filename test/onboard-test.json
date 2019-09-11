@@ -917,69 +917,6 @@
 						}
 					},
 					"response": []
-				},
-				{
-					"name": "create-vip-port",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
-								"exec": [
-									"pm.test('response is ok', function () {",
-									"    pm.response.to.have.status(201);",
-									"});",
-									"",
-									"let resp = pm.response.json();",
-									"",
-									"pm.environment.set('VIP_PORT_ID', resp.port.id);",
-									"",
-									"pm.environment.set('VIP', resp.port.fixed_ips[0].ip_address);"
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "X-Auth-Token",
-								"type": "text",
-								"value": "{{TOKEN}}"
-							},
-							{
-								"key": "Content-Type",
-								"type": "text",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n    \"port\": {\n        \"name\": \"newman-test-port\",\n        \"network_id\": \"{{EXT_NET_ID}}\"\n    }\n}"
-						},
-						"url": {
-							"raw": "{{NEUTRON_URL}}/v2.0/ports",
-							"host": [
-								"{{NEUTRON_URL}}"
-							],
-							"path": [
-								"v2.0",
-								"ports"
-							]
-						}
-					},
-					"response": []
 				}
 			]
 		},
@@ -1463,10 +1400,21 @@
 									"let resp = pm.response.json();",
 									"pm.environment.set('SERVICE_ID', resp.service.id);",
 									"let retry = Number(pm.environment.get('CREATE_NUMBER'));",
-									"if (retry !== 20) {",
+									"if (retry !== 30) {",
 									"    postman.setNextRequest('create-pool');",
 									"}",
 									"pm.environment.set('CREATE_NUMBER', ++retry);"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"id": "0a67cfb3-f333-4930-b442-9377d0fc40b8",
+								"exec": [
+									"let VIP_IP = \"111.222.0.\" + Number(pm.environment.get('CREATE_NUMBER'));",
+									"pm.environment.set('VIP', VIP_IP);"
 								],
 								"type": "text/javascript"
 							}
@@ -1663,60 +1611,6 @@
 								"applications",
 								"{{APPLICATION_ID}}",
 								"deploy"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "delete-vip-port",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"id": "a936c31a-da52-44c9-a84c-f741f9f01c8f",
-								"exec": [
-									"pm.test('response is ok', function () {",
-									"    pm.response.to.have.status(204);",
-									"});",
-									""
-								],
-								"type": "text/javascript"
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"id": "9348ae76-634d-4c3a-9447-051983a2972e",
-								"exec": [
-									""
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "X-Auth-Token",
-								"type": "text",
-								"value": "{{TOKEN}}"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": ""
-						},
-						"url": {
-							"raw": "{{NEUTRON_URL}}/v2.0/ports/{{VIP_PORT_ID}}",
-							"host": [
-								"{{NEUTRON_URL}}"
-							],
-							"path": [
-								"v2.0",
-								"ports",
-								"{{VIP_PORT_ID}}"
 							]
 						}
 					},
